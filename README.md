@@ -8,7 +8,6 @@ Simple run it from your Cordova project's root folder (i.e. the folder where the
 ```sh
 <CORDOVA_PROJECT>/cordova-server 
 ```
-
 # Main features
   
   * simple and light-weight
@@ -17,6 +16,20 @@ Simple run it from your Cordova project's root folder (i.e. the folder where the
   * auto reloads changes to the browsers: you can develop the JS plugins and the app at the same time
   * no need to add or have any specific Cordova platforms, no need to make 'cordova prepare' calls at all
   
+# Prerequisites
+
+  * You have installed Cordova on your machine: 
+```sh 
+npm install -g cordova
+```
+  * You Have a Cordova project to work on. To do this you can do the followings:
+```sh 
+cordova create -d <MY_PROJECT> com.myhomepage <MY_PROJECT>
+# you can also add any JS plugins now or later:
+cordova plugin add <com.plugin.i.want.to.use>
+```
+  * Simply grab a copy of [cordova.js](https://github.com/apache/cordova-js/blob/master/src/cordova.js) and place it under the WWW folder of your Cordova project. This is a temp approach in this version. 
+
 # Limitation
 
   * currently runs Cordova apps that depend only on pure Javascript based plugins
