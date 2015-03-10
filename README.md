@@ -31,13 +31,19 @@ cordova plugin add <com.plugin.i.want.to.use>
 
 # Limitation
 
-  * currently runs Cordova apps that depend only on pure Javascript based plugins
+  * currently tested on Cordova apps that depend only on pure Javascript based plugins
 
 # Inspiration
 
-TODO extend and shape the below description:
+Have an easy platform agnostic way to create and rapid develop HTML based frontend for Cordova projects.
 
-With live-server you are able to run WWW applications and sites with automatic reload.
-In case of Cordova projects however you have to somehow load the Cordova plugins in its special module definitions, which are usually not in its source coden and gets only generated once after you added a platform and called the prepare command of cordova. It fastens the developmnet of the UI, protyping with dependencies resolution.
+Have an easy platform agnostic way to test pure Javascript based Cordova plugins.
+
+With live-server you are able to run WWW applications and sites with automatic reload. Why not to achieve this in case of Cordova projects.
+
+In case of Cordova projects you the Cordova plugins gets loaded in its special Javascript/Cordova module definitions, which are usually a wrapped versions of the original plugin source files, and only gets generated once after you added a specific platform (e.g. cordova platform add android) and called the 'cordova prepare' command. This is repetitive and unecesseraly  
+
+It fastens the developmnet of the UI, protyping with automatically resolvind Cordova plugin dependencies.
+
 In case you are also developing a pure JS plugin, that depends only on other pure JS plugins or libraries, you can easily setup a Cordova project to test and develop at once, from the same source code.
 
