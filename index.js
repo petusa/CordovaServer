@@ -10,15 +10,15 @@ var liveServer = require('live-server'),
 	send = require('send');
 
 var originalStaticServer = liveServer.staticServer; // save original static server function
-liveServer.staticServer = function(root) { 
+liveServer.staticServer = function(root) {
 	if (!isCordova(root)) {
 		// use original static server always if not cordova
 		return originalStaticServer(root);
-	} else { 
+	} else {
 		// replace static server to cordova capable server that may fallback to original static server:
 		return cordovaCapableServer(root, originalStaticServer);
 	}
-}; 
+};
 
 /**
  * Start a cordova-server at the given port and directory
@@ -32,9 +32,10 @@ liveServer.staticServer = function(root) {
 module.exports.start = liveServer.start; // delegate to live-server start
 
 
-
-var INJECTABLES = {}; // per module/per source files
-var INJECTED_CORDOVA_HELPERS_CODE = require('fs').readFileSync(__dirname + "/injected-cordova.js", "utf8"); // helper methods addition into cordova.js
+var INJECTABLES = {}, // per module/per source files
+	INJECTED_CORDOVA_HELPERS_CODE = require('fs').readFileSync(__dirname + "/injected-cordova.js", "utf8"), // helper methods addition into cordova.js
+	CORDOVA_JS_PATH = path.join("www", "cordova.js"), // TODO should be checked whether it does exist
+	MODULE_ROOT = path.dirname(module.filename);
 
 // cordova capable server serves files depending wheteher it is cordova related JS or other regular e.g. html, css, js files
 // it is a senchalabs.connect middleware
@@ -49,30 +50,30 @@ function cordovaCapableServer(root, fallbackServer){
 			x = path.extname(reqpath),
 			name = path.basename(reqpath),
 			injectable = INJECTABLES[path.normalize(reqpath.substr(1))];
-		
+
 		// extend cordova.js with helpers
 		if (name === "cordova.js") {
-			// console.log("The main cordova.js file served with helpers and latest plugins modules.");
-			send(req, reqpath, { root: root })
+			console.log("The main cordova.js file served with helpers and latest plugins modules.");
+			send(req, CORDOVA_JS_PATH, { root: MODULE_ROOT })
 				.on('stream', function(stream){
-					// generate cordova_plugins.js content and inject it into cordova.js				
-					var cordovaPluginsJS = generateCordovaPluginsModuleDefinitionCode();
+					// generate cordova_plugins.js content and inject it into cordova.js
+					var cordovaPluginsJS = generateCordovaPluginsCode();
 
 					// we need to modify the length given to browser
 					var len = INJECTED_CORDOVA_HELPERS_CODE.length + cordovaPluginsJS.length + res.getHeader('Content-Length');
 					res.setHeader('Content-Length', len);
-					
+
 					// Write the injected code
 					// -> write the helpers to the start of the response
-					res.write(INJECTED_CORDOVA_HELPERS_CODE);	
+					res.write(INJECTED_CORDOVA_HELPERS_CODE);
 					// -> write the cordova_plugins.js content to the end of the response
 					stream.on("end", function(){
 						res.write(cordovaPluginsJS);
 					});
 				})
 				.pipe(res);
-		} 
-		
+		}
+
 		// inject cordova module definition block parts for cordova plugin js files
 		else if (x === ".js" && injectable){ //  && path.normalize(reqpath).toString().startsWith("/plugins")
 			console.log("Cordova plugin js source file (" + name + ") served as a Cordova module.");
@@ -101,13 +102,13 @@ function cordovaCapableServer(root, fallbackServer){
 // traverses the plugins folder to extract js-module information and saves them per corresponding source files
 // in the INJECTABLES associative array which information will be used later while serving those files
 function traversePlugins(root){
-	
+
 	INJECTABLES = {};
 
 	var pluginsFolderPath = path.join(root, "plugins");
-	
-	walk(   pluginsFolderPath, 
-			function(file){ return file.endsWith("plugin.xml"); }, 
+
+	walk(   pluginsFolderPath,
+			function(file){ return file.endsWith("plugin.xml"); },
 			function(err, results) {
 				if (err) return;
 				// console.dir(results);
@@ -115,37 +116,37 @@ function traversePlugins(root){
 					console.log("Processing plugin: " + path.dirname(path.relative(pluginsFolderPath, pluginFile)).blue);
 					fs.readFile(pluginFile, function(err, data) {
 						xmlParser.parseString(data, function (err, result) {
-							
+
 							var pluginId = result["plugin"]["$"]["id"],
 								jsModules = result["plugin"]["js-module"]; // its an array
-							
-							jsModules.forEach(function(module){
-								
-								var moduleSrc = module["$"]["src"],
-									moduleName = pluginId + "." + module["$"]["name"],
-									fileName = path.join("plugins", pluginId, moduleSrc),
-									clobbersTargets = (module["clobbers"]!==undefined)?module["clobbers"].map(function(clobber){
-										return clobber["$"]["target"];
-									}):[];
-								
-								INJECTABLES[fileName] = {
-							 		"firstLine": "//injected by cordova-server\ncordova.define('" + moduleName + "', function(require, exports, module) {\n//end of injection\n\n",
-							 		"lastLine":"\n\n//injected by cordova-server\n});\n//end of injection\n",
-									"moduleExports": function(){
-										var info = {
-											file: "../" + fileName,
-											id: moduleName,
-											clobbers: clobbersTargets
-										};
-										return info.join("\n"); // JSON.stringify(info);
-									}
-								};
-								// INJECTABLES[path.join("www", fileName)] = INJECTABLES[fileName];
-								// cordova.define("<MODULE NAME>", function(require, exports, module) {
-								// 		<ORIGINAL CODE>
-								// });		
-			
-							});
+
+							if (jsModules){ // there are plugins with no JS modules
+								jsModules.forEach(function(module){
+									var moduleSrc = module["$"]["src"],
+										moduleName = pluginId + "." + module["$"]["name"],
+										fileName = path.join("plugins", pluginId, moduleSrc),
+										clobbersTargets = (module["clobbers"]!==undefined)?module["clobbers"].map(function(clobber){
+											return clobber["$"]["target"];
+										}):[];
+
+									INJECTABLES[fileName] = {
+								 		"firstLine": "//injected by cordova-server\ncordova.define('" + moduleName + "', function(require, exports, module) {\n//end of injection\n\n",
+								 		"lastLine":"\n\n//injected by cordova-server\n});\n//end of injection\n",
+										"moduleExports": function(){
+											var info = {
+												file: "../" + fileName,
+												id: moduleName,
+												clobbers: clobbersTargets
+											};
+											return info.join("\n"); // JSON.stringify(info);
+										}
+									};
+									// INJECTABLES[path.join("www", fileName)] = INJECTABLES[fileName];
+									// cordova.define("<MODULE NAME>", function(require, exports, module) {
+									// 		<ORIGINAL CODE>
+									// });
+								});
+							}
 						}); // end of> xmlParser.parseString
 					});
 				}); // end of> results.forEach
@@ -153,6 +154,42 @@ function traversePlugins(root){
 	); // end of> walk
 
 }
+
+// code for generating cordova_plugins.js content based on the available plugins
+var INJECTED_CORDOVA_PLUGINS_CODE = require('fs').readFileSync(__dirname + "/injected-cordova_plugins.js", "utf8"); // cordova_plugins.js content generation into cordova.js
+function generateCordovaPluginsCode(){
+	var moduleExports = [];
+	INJECTABLES.forEach(function(o, a){
+		moduleExports.push(o.moduleExports());
+	});
+
+	// adding cordova_plugins.js content
+	var returnString = INJECTED_CORDOVA_PLUGINS_CODE.replace("module.exports = [];","module.exports = [" + moduleExports.join(",\n") + "];\n");
+
+	// TODO
+	// INJECTED_CORDOVA_PLUGINS_CODE.replace("module.exports.metadata = {};","use(LiveServer.staticServer");
+	return returnString;
+}
+
+// hack to export live-server's staticServer object in the corresponding index.js files
+function exportLiveServerStaticServer(){
+	var path = require('path');
+	_oldLoader = require.extensions['.js'];
+	require.extensions['.js'] = function(mod, filename) {
+		if (filename == path.resolve(path.dirname(module.filename), 'node_modules/live-server/index.js')) {
+			var content = require('fs').readFileSync(filename, 'utf8');
+			content = content.replace("use(staticServer","use(LiveServer.staticServer");
+			content += "LiveServer.staticServer = staticServer;\n";
+			mod._compile(content, filename);
+		} else {
+			_oldLoader(mod, filename);
+		}
+	};
+}
+
+//****************//
+// HELPER METHODS //
+//****************//
 
 // helper that walks through a directory recursively and reports the set of files mathcing the includedFn conditon
 // matched file entries are returned asynchronously via the 'done' callback.
@@ -184,42 +221,6 @@ function walk(dir, includedFn, done) {
 	});
 }
 
-// code for generating cordova_plugins.js content based on the available plugins
-var INJECTED_CORDOVA_PLUGINS_CODE = require('fs').readFileSync(__dirname + "/injected-cordova_plugins.js", "utf8"); // cordova_plugins.js content generation into cordova.js
-function generateCordovaPluginsModuleDefinitionCode(){
-	var moduleExports = [];
-	INJECTABLES.forEach(function(o, a){
-		moduleExports.push(o.moduleExports());
-	});
-
-	// adding cordova_plugins.js content	
-	var returnString = INJECTED_CORDOVA_PLUGINS_CODE.replace("module.exports = [];","module.exports = [" + moduleExports.join(",\n") + "];\n");
-
-	// TODO
-	// INJECTED_CORDOVA_PLUGINS_CODE.replace("module.exports.metadata = {};","use(LiveServer.staticServer");    
-	return returnString;
-}
-
-// hack to export live-server's staticServer object in the corresponding index.js files
-function exportLiveServerStaticServer(){
-	var path = require('path');
-	_oldLoader = require.extensions['.js'];
-	require.extensions['.js'] = function(mod, filename) {
-		if (filename == path.resolve(path.dirname(module.filename), 'node_modules/live-server/index.js')) {
-			var content = require('fs').readFileSync(filename, 'utf8');
-			content = content.replace("use(staticServer","use(LiveServer.staticServer");
-			content += "LiveServer.staticServer = staticServer;\n";
-			mod._compile(content, filename);
-		} else {
-			_oldLoader(mod, filename);
-		}
-	};
-}
-
-//****************//
-// HELPER METHODS //
-//****************//
-
 // adding endsWith to String
 if (typeof String.prototype.endsWith != 'function') {
 	String.prototype.endsWith = function(suffix) {
@@ -237,7 +238,7 @@ if (typeof String.prototype.startsWith != 'function') {
 // helper for iterating through an associative array
 if (typeof Object.prototype.forEach != 'function') {
 	Object.prototype.forEach = function (cb){
-		for(var index in this) { 
+		for(var index in this) {
 			if (this.hasOwnProperty(index)) {
 				var attr = this[index];
 				if (cb!==undefined) cb(attr, index);

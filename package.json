@@ -1,6 +1,6 @@
 {
   "name": "cordova-server",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "A Cordova development http server built on live-server. It runs pure Javascript based cordova projects in the browser without the need to add any platforms to your project.",
   "keywords": [
     "front-end",
@@ -16,12 +16,15 @@
     "name": "Peter Nagy (petusa)"
   },
   "dependencies": {
-    "live-server": "0.6.3",
-    "xml2js": "latest",
-    "send": "latest"
+     "live-server": "0.6.3",
+     "xml2js": "latest",
+     "send": "latest"
   },
   "bin": {
     "cordova-server": "./cordova-server.js"
+  },
+  "scripts": {
+    "prepublish": "node scripts/generate_cordova.js"
   },
   "repository": {
     "type": "git",
@@ -35,7 +38,7 @@
   "bugs": {
     "url": "https://github.com/petusa/cordovaserver/issues"
   },
-  "_id": "cordova-server@0.0.1",
+  "_id": "cordova-server@0.0.3",
   "maintainers": [
     {
       "name": "petusa",
