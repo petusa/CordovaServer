@@ -41,9 +41,26 @@ Have an easy platform agnostic way to test pure Javascript based Cordova plugins
 
 With live-server you are able to run WWW applications and sites with automatic reload. Why not to achieve this in case of Cordova projects.
 
-In case of Cordova projects you the Cordova plugins gets loaded in its special Javascript/Cordova module definitions, which are usually a wrapped versions of the original plugin source files, and only gets generated once after you added a specific platform (e.g. cordova platform add android) and called the 'cordova prepare' command. This is repetitive and unecesseraly  
+In case of Cordova projects you the Cordova plugins gets loaded in its special Javascript/Cordova module definitions, which are usually a wrapped versions of the original plugin source files. These are only generated once after you added a specific platform (e.g. cordova platform add android) and called the 'cordova prepare' command. This is repetitive and unecessary task, that can be avoided.  
 
-It fastens the developmnet of the UI, protyping with automatically resolvind Cordova plugin dependencies.
+It fastens the developmnet of the UI, protyping with automatically resolving Cordova plugin dependencies.
 
 In case you are also developing a pure JS plugin, that depends only on other pure JS plugins or libraries, you can easily setup a Cordova project to test and develop at once, from the same source code.
+
+# Changes
+
+  - Version 0.0.3
+  
+  cordova.js automatically obtained when installing from npm (prepublish script added, index.js modified to serve the new obtained cordova.js)
+
+  bug fix (plugin.xml with no js modules defined parsed now properly)
+
+  cleanup (trailing spaces)
+  
+
+  - Version 0.0.1 / 0.0.2
+
+  first version
+
+
 
