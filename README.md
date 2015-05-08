@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/petusa/CordovaServer.png?label=ready&title=Ready)](https://waffle.io/petusa/CordovaServer)
 # CordovaServer
 A Cordova development http server built on live-server. It runs pure Javascript based cordova projects in the browser without the need to add any platforms to your project.
 
